@@ -24,7 +24,7 @@ class Trader
     @index = 0
     @money = $money.to_f
     get_amount
-    @bought = @amount > 0.001 && @money == 0 ? true : false
+    @bought = @amount > 0.0001 && @money == 0 ? true : false
     puts "bought #{@bought} #{@amount}"
     @buy_total = 0.0
     @last_price = 0.0
@@ -35,7 +35,7 @@ class Trader
   end
 
   def get_amount
-    @amount = @trader.get_info["return"]["funds"][$currency].round_down(3) 
+    @amount = @trader.get_info["return"]["funds"][$currency].round_down(4) 
   end
 
   def data_old?
@@ -63,9 +63,9 @@ class Trader
         #puts "long term: %s %s %s %s %s %s %s" % [ma1.round(3), ma2.round(3), ma3.round(3), @last_price, @amount.round(3), @money, Time.now] if @index % 50 == 0
         #puts "short term: %s %s %s" % [short_ma1.round(3), short_ma2.round(3), short_ma3.round(3)] 
         if @index % 50 == 0
-          puts "status: %s %s %s %s" % [@last_price, @amount.round(3), @money, Time.now]
-          puts "long term: %s" % ma3.round(3)
-          puts "short term: %s" % short_ma3.round(3) 
+          puts "status: %s %s %s %s" % [@last_price, @amount.round(4), @money, Time.now]
+          puts "long term: %s" % ma3.round(4)
+          puts "short term: %s" % short_ma3.round(4) 
         end
         wait_period = @last_transaction_at ? Time.now - @last_transaction_at < (15 * 60)  : false
         if (short_ma3) < ma3 && @bought && !wait_period #ma2 < ma1 && ma3 < ma2 && @bought
@@ -101,7 +101,7 @@ class Trader
     top_price = buys.first.first
     our_price = (top_price + 0.001).round(3)
     @last_price = our_price
-    new_amount = (@money / our_price).round_down(3)
+    new_amount = (@money / our_price).round_down(4)
     puts "buying #{new_amount} #{our_price}"
     result = @trader.trade(:pair => "#{$currency}_usd", :type => "buy", :rate => our_price, :amount => new_amount)
     order_complete = false
