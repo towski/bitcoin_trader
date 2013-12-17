@@ -75,7 +75,7 @@ class Trader
             puts "sell %s %s" % [ma3, Time.now]
           #end
         end
-        if (short_ma3 + $threshold) > ma3 && !@bought && !wait_period #ma3 > ma2 && ma2 > ma1 && !@bought
+        if (short_ma3) > (ma3 + $threshold) && !@bought && !wait_period #ma3 > ma2 && ma2 > ma1 && !@bought
           #if ma3 - ma2 > $threshold
             @bought = true
             buy unless data_old?
@@ -88,69 +88,143 @@ class Trader
           $got_signal = false
         end
       rescue => e
-        debugger
+        if e.message != "Server returned invalid data."
+          debugger
+        end
       ensure
         sleep 1
       end
     end
   end
 
-  def buy
+  def buy_trade
     depth = Btce::PublicAPI.get_pair_operation_json "#{$currency}_usd", "depth" #[[28.6, 44.08847817], [28.7, 63.72908396]]
     buys = depth["bids"]
     top_price = buys.first.first
-    our_price = (top_price + 0.001).round(3)
-    @last_price = our_price
-    new_amount = (@money / our_price).round_down(4)
-    puts "buying #{new_amount} #{our_price}"
-    result = @trader.trade(:pair => "#{$currency}_usd", :type => "buy", :rate => our_price, :amount => new_amount)
+    @our_price = (top_price + 0.001).round(3)
+    @last_price = @our_price
+    new_amount = (@money / @our_price).round_down(4)
+    puts "buying #{new_amount} #{@our_price}"
+    @trader.trade(:pair => "#{$currency}_usd", :type => "buy", :rate => @our_price, :amount => new_amount)
+  end
+
+  def buy
+    result = buy_trade
+    if result["success"] != 1
+      puts "failed to make trade #{result.inspect}"
+      return
+    end
     order_complete = false
+    tries = 0
     while !order_complete
       begin
         results = @trader.order_list
         if results["return"].nil?
           get_amount
-          MyTrade.create :amount => @amount, :price => our_price, :item => $currency, :trade_type => "buy", :date => Time.now
+          MyTrade.create :amount => @amount, :price => @our_price, :item => $currency, :trade_type => "buy", :date => Time.now
           @money = 0
           @last_transaction_at = Time.now
           order_complete = true
-          puts "successfully bought at #{our_price}"
+          puts "successfully bought at #{@our_price}"
         else 
-          puts "waiting for order to complete"
+          tries += 1
+          if tries > 15
+            puts "cancelling order and reselling"
+            cancel = @trader.cancel_order(:order_id => result["return"]["order_id"])
+            if cancel["success"] != 1
+              puts "failed to make trade #{cancel.inspect}"
+              exit
+            end
+            old_amount = @amount
+            get_amount
+            amount_bought = @amount - old_amount
+            puts "old amount #{old_amount} current amount #{@amount} amount_bought #{amount_bought}"
+            if amount_bought > 0.000001
+              MyTrade.create :amount => amount_bought, :price => @our_price, :item => $currency, :trade_type => "sell", :date => Time.now
+              @money = @money - @money * @amount
+              puts "current amount #{@amount}, current money #{@money}"
+            end
+            result = buy_trade
+            tries = 0
+          else
+            puts "waiting for order to complete"
+          end
         end
       rescue => e
+        if e.message != "Server returned invalid data."
+          debugger
+        end
+      end
+      if $got_signal
         debugger
+        $got_signal = false
       end
       sleep 2
     end
     puts "done"
   end
 
-  def sell
+  def sell_trade
     depth = Btce::PublicAPI.get_pair_operation_json "#{$currency}_usd", "depth" #[[28.6, 44.08847817], [28.7, 63.72908396]]
     sells = depth["asks"]
     top_price = sells.first.first
-    our_price = (top_price - 0.001).round(3)
+    @our_price = (top_price - 0.001).round(3)
     get_amount
-    @last_price = our_price
-    puts "selling #{@amount} #{our_price}"
-    @trader.trade(:pair => "#{$currency}_usd", :type => "sell", :rate => our_price, :amount => @amount)
+    @last_price = @our_price
+    puts "selling #{@amount} #{@our_price}"
+    @trader.trade(:pair => "#{$currency}_usd", :type => "sell", :rate => @our_price, :amount => @amount)
+  end
+
+  def sell
+    result = sell_trade
+    if result["success"] != 1
+      puts "failed to make trade #{result.inspect}"
+      return
+    end
     order_complete = false
+    tries = 0
     while !order_complete
       begin
         results = @trader.order_list
         if results["return"].nil? #|| results["return"].size == 0
-          MyTrade.create :amount => @amount, :price => our_price, :item => $currency, :trade_type => "sell", :date => Time.now
-          @money = our_price * @amount
+          MyTrade.create :amount => @amount, :price => @our_price, :item => $currency, :trade_type => "sell", :date => Time.now
+          @money += @our_price * @amount
           @amount = 0
           @last_transaction_at = Time.now
           order_complete = true
-          puts "successfully sold at #{our_price}"
+          puts "successfully sold at #{@our_price}"
         else 
-          puts "waiting for order to complete"
+          tries += 1
+          if tries > 15
+            puts "cancelling order and reselling"
+            cancel = @trader.cancel_order(:order_id => result["return"]["order_id"])
+            if cancel["success"] != 1
+              puts "failed to make trade #{cancel.inspect}"
+              exit
+            end
+            old_amount = @amount
+            get_amount
+            amount_sold = old_amount - @amount 
+            puts "old amount #{old_amount} current amount #{@amount} amount_sold #{amount_sold}"
+            if amount_sold > 0.000001
+              MyTrade.create :amount => amount_sold, :price => @our_price, :item => $currency, :trade_type => "sell", :date => Time.now
+              @money += @our_price * amount_sold
+              puts "current money amount #{@money}"
+            end
+            result = sell_trade
+            tries = 0
+          else
+            puts "waiting for order to complete"
+          end
         end
       rescue => e
+        if e.message != "Server returned invalid data."
+          debugger
+        end
+      end
+      if $got_signal
         debugger
+        $got_signal = false
       end
       sleep 2
     end
