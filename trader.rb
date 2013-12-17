@@ -72,14 +72,14 @@ class Trader
           #if ma2 - ma3 > $threshold
             @bought = false
             sell unless data_old?
-            puts "sell %s %s %s %s" % [ma1, ma2, ma3, Time.now]
+            puts "sell %s %s" % [ma3, Time.now]
           #end
         end
         if (short_ma3) > ma3 && !@bought && !wait_period #ma3 > ma2 && ma2 > ma1 && !@bought
           #if ma3 - ma2 > $threshold
             @bought = true
             buy unless data_old?
-            puts "buy %s %s %s %s" % [ma1, ma2, ma3, Time.now]
+            puts "buy %s %s" % [ma3, Time.now]
           #end
         end
         @index += 1
