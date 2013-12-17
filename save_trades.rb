@@ -1,23 +1,4 @@
-require 'btce'
-require 'ruby-debug'
-require 'active_record'
-
-class Float
-  def precision(number = 3)
-    "%8.#{number}f" % self
-  end
-end
-
-class Fixnum
-  def precision(number = 3)
-    "%8.#{number}f" % self
-  end
-end
-
-class Trade < ActiveRecord::Base
-end
-
-ActiveRecord::Base.establish_connection :database => "btce", :username => "root", :adapter => "mysql2"
+require_relative 'application'
 
 $currency = ARGV[0]
 unless $currency
