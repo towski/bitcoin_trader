@@ -67,7 +67,7 @@ class Trader
           puts "long term: %s" % ma3.round(4)
           puts "short term: %s" % short_ma3.round(4) 
         end
-        wait_period = @last_transaction_at ? Time.now - @last_transaction_at < (15 * 60)  : false
+        wait_period = @last_transaction_at ? Time.now - @last_transaction_at < (3 * 60)  : false
         if (short_ma3) < ma3 && @bought && !wait_period #ma2 < ma1 && ma3 < ma2 && @bought
           #if ma2 - ma3 > $threshold
             @bought = false
