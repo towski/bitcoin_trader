@@ -24,7 +24,7 @@ class Trader
     @index = 0
     @money = $money.to_f
     get_amount
-    @bought = @amount > 0.0001 && @money == 0 ? true : false
+    @bought = @amount > 0.00009 && @money == 0 ? true : false
     puts "bought #{@bought} #{@amount}"
     @buy_total = 0.0
     @last_price = 0.0
