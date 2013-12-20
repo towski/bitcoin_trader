@@ -54,14 +54,8 @@ class Trader
     loop do
       begin
         ma_x_minutes_ago = "select sum(average) / count(*) from (select avg(price) as average, date, ROUND(UNIX_TIMESTAMP(date)/(%s * 60)) AS timekey from trades where item = '#{$currency}' and date between DATE_SUB(UTC_TIMESTAMP() - INTERVAL %s minute, INTERVAL %s minute) and UTC_TIMESTAMP() - INTERVAL %s minute group by timekey) as average_table;"
-        #ma1 = ActiveRecord::Base.connection.execute(ma_x_minutes_ago % [15, 30, (15 * 24), 30]).to_a.first.first
-        #ma2 = ActiveRecord::Base.connection.execute(ma_x_minutes_ago % [15, 15, (15 * 24), 15]).to_a.first.first
         ma3 = ActiveRecord::Base.connection.execute(ma_x_minutes_ago % [1, 0, (1 * 24), 0]).to_a.first.first
-        #short_ma1 = ActiveRecord::Base.connection.execute(ma_x_minutes_ago % [15, 30, (15 * 7), 30]).to_a.first.first
-        #short_ma2 = ActiveRecord::Base.connection.execute(ma_x_minutes_ago % [15, 15, (15 * 7), 15]).to_a.first.first
         short_ma3 = ActiveRecord::Base.connection.execute(ma_x_minutes_ago % [1, 0, (1 * 7), 0]).to_a.first.first
-        #puts "long term: %s %s %s %s %s %s %s" % [ma1.round(3), ma2.round(3), ma3.round(3), @last_price, @amount.round(3), @money, Time.now] if @index % 50 == 0
-        #puts "short term: %s %s %s" % [short_ma1.round(3), short_ma2.round(3), short_ma3.round(3)] 
         if @index % 50 == 0
           puts "status: %s %s %s %s" % [@last_price, @amount.round(4), @money, Time.now]
           puts "long term: %s" % ma3.round(4)
@@ -87,6 +81,8 @@ class Trader
           debugger
           $got_signal = false
         end
+      rescue SocketError => e
+        puts "Socket error"
       rescue => e
         if e.message != "Server returned invalid data."
           debugger
@@ -189,10 +185,10 @@ class Trader
         if results["return"].nil? #|| results["return"].size == 0
           MyTrade.create :amount => @amount, :price => @our_price, :item => $currency, :trade_type => "sell", :date => Time.now
           @money += @our_price * @amount
-          @amount = 0
+          get_amount
           @last_transaction_at = Time.now
           order_complete = true
-          puts "successfully sold at #{@our_price}"
+          puts "successfully sold at #{@our_price}, current amount is #{@amount}"
         else 
           tries += 1
           if tries > 15
