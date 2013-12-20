@@ -5,4 +5,5 @@ delete_sql = "DELETE FROM trades where date < now() - interval 360 minute"
 
 connection = ActiveRecord::Base.connection
 
-connection.execute(insert_sql).to_a.first.first
+connection.execute(insert_sql)
+connection.execute(delete_sql)
