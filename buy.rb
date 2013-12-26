@@ -1,0 +1,2 @@
+class Buy < Transaction
+end

@@ -19,6 +19,8 @@ unless $money
 end
 
 class Trader
+  attr_reader :trader
+
   def initialize
     @trader = Btce::TradeAPI.new_from_keyfile
     @index = 0

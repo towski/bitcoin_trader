@@ -1,0 +1,2 @@
+class Sell < Transaction
+end

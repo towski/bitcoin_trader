@@ -14,6 +14,24 @@ class CreateMyTrades < ActiveRecord::Migration
   end
 end
 
+class CreateTransactions < ActiveRecord::Migration
+  def change
+    create_table(:transactions) do |t|
+      t.datetime :date,  :null => false
+      t.float :rate,  :null => false
+      t.float :amount,  :null => false
+      t.integer :order_id,  :null => false
+      t.integer :tid,  :null => false
+      t.boolean :is_your_order
+      t.string :pair
+      t.string :type
+    end
+
+    add_index :transactions, :tid, :unique => true
+  end
+end
+
+
 class CreateTrades < ActiveRecord::Migration
   def change
     create_table(:trades) do |t|
@@ -48,6 +66,10 @@ end
 
 unless ActiveRecord::Base.connection.table_exists? 'my_trades'
   CreateMyTrades.migrate :up
+end
+
+unless ActiveRecord::Base.connection.table_exists? 'transactions'
+  CreateTransactions.migrate :up
 end
 
 unless ActiveRecord::Base.connection.table_exists? 'trades'

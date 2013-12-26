@@ -3,6 +3,9 @@ require 'ruby-debug'
 require 'active_record'
 require_relative 'trade'
 require_relative 'my_trade'
+require_relative 'transaction'
+require_relative 'buy'
+require_relative 'sell'
 
 $database ||= ENV["DATABASE"] || "btce"
 
