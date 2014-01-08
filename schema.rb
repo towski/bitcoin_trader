@@ -31,6 +31,17 @@ class CreateTransactions < ActiveRecord::Migration
   end
 end
 
+class CreateEMAs < ActiveRecord::Migration
+  def change
+    create_table(:emas) do |t|
+      t.datetime :date,  :null => false
+      t.float :value,  :null => false
+      t.integer :period,  :null => false
+      t.integer :intervals,  :null => false
+      t.string :pair
+    end
+  end
+end
 
 class CreateTrades < ActiveRecord::Migration
   def change
@@ -70,6 +81,10 @@ end
 
 unless ActiveRecord::Base.connection.table_exists? 'transactions'
   CreateTransactions.migrate :up
+end
+
+unless ActiveRecord::Base.connection.table_exists? 'emas'
+  CreateEMAs.migrate :up
 end
 
 unless ActiveRecord::Base.connection.table_exists? 'trades'

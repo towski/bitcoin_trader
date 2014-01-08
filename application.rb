@@ -6,6 +6,7 @@ require_relative 'my_trade'
 require_relative 'transaction'
 require_relative 'buy'
 require_relative 'sell'
+require_relative 'ema'
 
 $database ||= ENV["DATABASE"] || "btce"
 

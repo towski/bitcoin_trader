@@ -1,0 +1,2 @@
+Stores bitcoin trade activity into a database ('ruby save_trades.rb'), then makes calculations based on those trades ('ruby trader.rb btc 0.1')
+and manages your btce account. 
