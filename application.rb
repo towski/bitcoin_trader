@@ -1,6 +1,7 @@
 require 'btce'
 require 'ruby-debug'
 require 'active_record'
+require 'channel'
 require_relative 'trade'
 require_relative 'my_trade'
 require_relative 'transaction'

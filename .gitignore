@@ -1,3 +1,4 @@
 btce-api-key.yml
 email_password.yml
 basic.pem
+*.sql
